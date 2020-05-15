@@ -1,5 +1,6 @@
 package com.blackmania.facialreconition.data.tabellen;
 
+
 import javax.persistence.*;
 import java.util.UUID;
 
@@ -11,7 +12,14 @@ public class User {
 
     private String name;
 
+    private String file_location;
+
     public User() {
+    }
+
+    public User(String name, String file_location) {
+        this.name = name;
+        this.file_location = file_location;
     }
 
     @Column
@@ -32,5 +40,14 @@ public class User {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    @Column
+    public String getFile_location() {
+        return file_location;
+    }
+
+    public void setFile_location(String file_location) {
+        this.file_location = file_location;
     }
 }
