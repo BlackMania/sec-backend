@@ -1,16 +1,28 @@
 package com.blackmania.facialreconition.rest.controllers;
 
 
+import com.blackmania.facialreconition.ai.InitClass;
 import com.blackmania.facialreconition.data.repository.UserRepository;
 import com.blackmania.facialreconition.data.tabellen.User;
 import com.blackmania.facialreconition.rest.dto.RegisterDTO;
 import com.blackmania.facialreconition.rest.exceptions.FileStorageException;
+import com.blackmania.facialreconition.rest.fileHandlers.FilePropperties;
 import com.blackmania.facialreconition.rest.fileHandlers.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -20,7 +32,13 @@ public class LoginController {
     private FileStorageService fileStorageService;
 
     @Autowired
+    private FilePropperties propperties;
+
+    @Autowired
     private UserRepository userRepository;
+
+    private static final String PATH = "/tmp";
+    private Path path;
 
     @PostMapping(value = "/register")
     public ResponseEntity<?> register(@RequestParam("file") MultipartFile file, @RequestParam("name") String name) throws FileStorageException {
@@ -31,6 +49,33 @@ public class LoginController {
         userRepository.save(user);
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/test")
+    public ResponseEntity<?> test(@RequestParam("file") MultipartFile file) throws FileStorageException, IOException {
+        this.path = Paths.get(PATH).toAbsolutePath().normalize();
+
+        try {
+            Files.createDirectories(this.path);
+        } catch (Exception ex){
+            throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
+        }
+
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+
+        Path target = this.path.resolve(filename);
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+        Iterable<User> users = userRepository.findAll();
+
+        List<Integer> results = new ArrayList<>();
+
+        for (User user: users) {
+            results.add(InitClass.compareFaces(propperties.getUploadDir() + "/" + user.getFile_location(), PATH + "/" + filename));
+        }
+
+        return new ResponseEntity<>(results, HttpStatus.OK);
+
     }
 
 }
