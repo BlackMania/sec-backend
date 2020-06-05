@@ -1,10 +1,8 @@
 package com.blackmania.facialreconition.rest.controllers;
 
 
-import com.blackmania.facialreconition.ai.InitClass;
 import com.blackmania.facialreconition.data.repository.UserRepository;
 import com.blackmania.facialreconition.data.tabellen.User;
-import com.blackmania.facialreconition.rest.dto.RegisterDTO;
 import com.blackmania.facialreconition.rest.exceptions.FileStorageException;
 import com.blackmania.facialreconition.rest.fileHandlers.FilePropperties;
 import com.blackmania.facialreconition.rest.fileHandlers.FileStorageService;
@@ -15,14 +13,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -68,14 +65,20 @@ public class LoginController {
 
         Iterable<User> users = userRepository.findAll();
 
-        List<Integer> results = new ArrayList<>();
-
-        for (User user: users) {
-            results.add(InitClass.compareFaces(propperties.getUploadDir() + "/" + user.getFile_location(), PATH + "/" + filename));
-        }
-
-        return new ResponseEntity<>(results, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
 
     }
 
+    @GetMapping(value = "pythonTest")
+    public String TEST() throws IOException, InterruptedException {
+        String command = "python src\\main\\resources\\test.py";
+        Process p = Runtime.getRuntime().exec(command);
+        p.waitFor();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            line = br.readLine();
+            return line;
+        }
+    }
 }
